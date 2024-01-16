@@ -6,27 +6,28 @@ import (
 	"strconv"
 
 	triangle "github.com/MichaelAJay/personal-site-go-backend/pkg/sierpinski"
+	"github.com/gin-gonic/gin"
 )
 
-func SierpinskiHandler(w http.ResponseWriter, r *http.Request) {
-	iterationsParam := r.URL.Query().Get("iterations")
+func SierpinskiHandler(c *gin.Context) {
+	iterationsParam := c.Query("iterations")
 	if iterationsParam == "" {
-		http.Error(w, "Missing iterations parameter", http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Missing iterations parameter")
 		return
 	}
 
 	iterations, err := strconv.Atoi(iterationsParam)
 	if err != nil {
-		http.Error(w, "Invalid iterations parameter", http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Invalid iterations parameter")
 		return
 	}
 
 	svg, err := triangle.GenerateSierpinskiSVG(iterations)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error generating SVG: %v", err), http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Error generating SVG: %v", err))
 		return
 	}
 
-	w.Header().Set("Content-Type", "image/svg+xml")
-	fmt.Fprint(w, svg)
+	c.Header("Content-Type", "image/svg+xml")
+	c.String(http.StatusOK, svg)
 }
