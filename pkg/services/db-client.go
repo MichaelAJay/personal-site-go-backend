@@ -1,4 +1,4 @@
-package db_client
+package services
 
 import (
 	"sync"
@@ -10,7 +10,7 @@ import (
 var db *gorm.DB
 var once sync.Once
 
-func db_client() *gorm.DB {
+func DbClient() *gorm.DB {
 	once.Do(func() {
 		dsn := "TODO"
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{

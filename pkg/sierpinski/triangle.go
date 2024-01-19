@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	s = 500
+	s = 68
 )
 
 type Triangle struct {

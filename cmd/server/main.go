@@ -19,6 +19,7 @@ func main() {
 
 	router.GET("/", routes.HomeHandler)
 	router.GET("/sierpinski", routes.SierpinskiHandler)
+	router.POST("/contact", routes.ContactHandler)
 
 	fmt.Println("Server is running on http://localhost:8080")
 	router.Run(":8080")
