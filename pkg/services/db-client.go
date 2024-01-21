@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"sync"
 
 	"gorm.io/driver/postgres"
@@ -10,10 +11,12 @@ import (
 var db *gorm.DB
 var once sync.Once
 
-func DbClient() *gorm.DB {
+func DbClient(dsn string) *gorm.DB {
 	once.Do(func() {
-		dsn := "TODO"
-		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		log.Printf("DSN: %s\n", dsn)
+
+		var err error
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 			SkipDefaultTransaction: true,
 		})
 
@@ -22,7 +25,9 @@ func DbClient() *gorm.DB {
 		}
 
 		// Migrate the schema
-		db.AutoMigrate()
+		// db.AutoMigrate()
+
+		log.Println("Database connection established")
 	})
 	return db
 }
