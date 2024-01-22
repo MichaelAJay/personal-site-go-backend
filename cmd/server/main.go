@@ -59,6 +59,7 @@ func main() {
 	router.POST("/contact", routes.PostContactFormHandler(contactService))
 	router.GET("/contact/list", routes.GetUnreadContactFormListHandler(contactService))
 	router.GET("/contact", routes.GetMessageHandler(contactService))
+	router.PATCH("/contact/toggle-read-status/:id", routes.ToggleMessageReadStatus(contactService))
 
 	fmt.Println("Server is running on http://localhost:8080")
 	router.Run(":8080")

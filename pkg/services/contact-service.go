@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/errors"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/models"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/types"
 )
@@ -61,9 +62,28 @@ func (s *ContactService) GetMessage(id uint) (models.Contact, error) {
 		return models.Contact{}, err
 	}
 
-	if err := dbClient.Model(&message).Update("IsRead", true).Error; err != nil {
+	// if err := dbClient.Model(&message).Update("IsRead", true).Error; err != nil {
+	// 	log.Printf("Failed to update IsRead: %v", err)
+	// }
+
+	_, err := s.ToggleMessageReadStatus(message.ID, true)
+	if err != nil {
 		log.Printf("Failed to update IsRead: %v", err)
 	}
 
 	return message, nil
+}
+
+func (s *ContactService) ToggleMessageReadStatus(id uint, isRead bool) (string, error) {
+	dbClient := db
+	result := dbClient.Model(&models.Contact{}).Where("ID = ?", id).Update("IsRead", isRead)
+	if result.Error != nil {
+		return "Failure", result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return "No Record Updated", errors.NotFoundError{Msg: "No record found with the given ID"}
+	}
+
+	return "Success", nil
 }

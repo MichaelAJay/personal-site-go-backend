@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/errors"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/services"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/types"
 	"github.com/gin-gonic/gin"
@@ -77,5 +78,42 @@ func GetMessageHandler(service *services.ContactService) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, message)
+	}
+}
+
+func ToggleMessageReadStatus(service *services.ContactService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		idParam := c.Param("id")
+		parsedId, err := strconv.ParseUint(idParam, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+			return
+		}
+
+		id := uint(parsedId)
+
+		var body types.ToggleMessageReadStatusRequestBody
+
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if body.IsRead == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "IsRead must be provided"})
+			return
+		}
+
+		status, err := service.ToggleMessageReadStatus(id, *body.IsRead)
+		if err != nil {
+			if _, ok := err.(errors.NotFoundError); ok {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": status})
 	}
 }

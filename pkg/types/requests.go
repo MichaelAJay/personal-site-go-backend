@@ -5,3 +5,7 @@ type ContactFormRequestBody struct {
 	Email   string `json:"email" binding:"required,email"`
 	Message string `json:"message" binding:"required"`
 }
+
+type ToggleMessageReadStatusRequestBody struct {
+	IsRead *bool `json:"isRead" binding:"required"`
+}
