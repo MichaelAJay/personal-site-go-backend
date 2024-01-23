@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/MichaelAJay/personal-site-go-backend/pkg/errors"
-	"github.com/MichaelAJay/personal-site-go-backend/pkg/services"
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/custom_errors"
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/contact"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/types"
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +24,7 @@ import (
 
 //		c.JSON(http.StatusOK, gin.H{"message": "Contact form submitted successfully"})
 //	}
-func PostContactFormHandler(service *services.ContactService) gin.HandlerFunc {
+func PostContactFormHandler(service *contact.ContactService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var form types.ContactFormRequestBody
 
@@ -49,7 +49,7 @@ func PostContactFormHandler(service *services.ContactService) gin.HandlerFunc {
 
 //		c.JSON(http.StatusOK, list)
 //	}
-func GetUnreadContactFormListHandler(service *services.ContactService) gin.HandlerFunc {
+func GetUnreadContactFormListHandler(service *contact.ContactService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		list, err := service.GetUnreadForms()
 
@@ -62,7 +62,7 @@ func GetUnreadContactFormListHandler(service *services.ContactService) gin.Handl
 	}
 }
 
-func GetMessageHandler(service *services.ContactService) gin.HandlerFunc {
+func GetMessageHandler(service *contact.ContactService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		idParam := c.Query("id")
 		id, err := strconv.ParseUint(idParam, 10, 64)
@@ -81,7 +81,7 @@ func GetMessageHandler(service *services.ContactService) gin.HandlerFunc {
 	}
 }
 
-func ToggleMessageReadStatus(service *services.ContactService) gin.HandlerFunc {
+func ToggleMessageReadStatus(service *contact.ContactService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		idParam := c.Param("id")
 		parsedId, err := strconv.ParseUint(idParam, 10, 32)
@@ -106,7 +106,7 @@ func ToggleMessageReadStatus(service *services.ContactService) gin.HandlerFunc {
 
 		status, err := service.ToggleMessageReadStatus(id, *body.IsRead)
 		if err != nil {
-			if _, ok := err.(errors.NotFoundError); ok {
+			if _, ok := err.(custom_errors.NotFoundError); ok {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 				return
 			}

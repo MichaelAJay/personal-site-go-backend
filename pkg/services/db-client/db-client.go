@@ -1,4 +1,4 @@
-package services
+package db_client
 
 import (
 	"log"
@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
+var Db *gorm.DB
 var once sync.Once
 
 func DbClient(dsn string) *gorm.DB {
@@ -16,18 +16,14 @@ func DbClient(dsn string) *gorm.DB {
 		log.Printf("DSN: %s\n", dsn)
 
 		var err error
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 			SkipDefaultTransaction: true,
 		})
 
 		if err != nil {
 			panic("failed to connect database")
 		}
-
-		// Migrate the schema
-		// db.AutoMigrate()
-
 		log.Println("Database connection established")
 	})
-	return db
+	return Db
 }

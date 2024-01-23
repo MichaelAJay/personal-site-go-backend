@@ -9,9 +9,12 @@ import (
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/config"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/models"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/routes"
-	"github.com/MichaelAJay/personal-site-go-backend/pkg/services"
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/auth"
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/contact"
+	db_client "github.com/MichaelAJay/personal-site-go-backend/pkg/services/db-client"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func loadConfig(path string) (config.Config, error) {
@@ -28,6 +31,12 @@ func loadConfig(path string) (config.Config, error) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(("Error loading .env file"))
+	}
+
+	// Get rid of config
 	cfg, err := loadConfig("config.json")
 	if err != nil {
 		log.Fatalf("Error loading config file: %v", err)
@@ -37,7 +46,7 @@ func main() {
 	log.Printf("ENV: %s\n", env)
 
 	// Database connection & automigration (non production)
-	db := services.DbClient(cfg.DbDsn)
+	db := db_client.DbClient(cfg.DbDsn)
 
 	if env == "local" {
 		db.AutoMigrate(&models.Contact{})
@@ -55,11 +64,21 @@ func main() {
 	router.GET("/sierpinski", routes.SierpinskiHandler)
 
 	// Contact Form
-	contactService := services.NewContactService()
+	contactService := contact.NewContactService()
 	router.POST("/contact", routes.PostContactFormHandler(contactService))
 	router.GET("/contact/list", routes.GetUnreadContactFormListHandler(contactService))
 	router.GET("/contact", routes.GetMessageHandler(contactService))
 	router.PATCH("/contact/toggle-read-status/:id", routes.ToggleMessageReadStatus(contactService))
+
+	// Auth
+	authService, err := auth.NewAuthService()
+	if err != nil {
+		log.Fatalf("Error instantiating auth service: %v", err)
+	}
+
+	// Handle err
+	router.POST("/sign-up", routes.SignUp(authService))
+	router.POST("/sign-in", routes.SignIn(authService))
 
 	fmt.Println("Server is running on http://localhost:8080")
 	router.Run(":8080")
