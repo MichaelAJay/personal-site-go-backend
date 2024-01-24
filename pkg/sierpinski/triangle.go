@@ -58,7 +58,7 @@ func GenerateSierpinskiSVG(iterations int) (string, error) {
 
 func drawTriangle(c *draw.Canvas, t Triangle, col color.Color) {
 	lines := []vg.Point{t.V1, t.V2, t.V3, t.V1}
-	c.StrokeLines(draw.LineStyle{Color: col, Width: vg.Length(1)}, lines)
+	c.StrokeLines(draw.LineStyle{Color: col, Width: vg.Length(0.2)}, lines)
 }
 
 func iteration(c *draw.Canvas, source []Triangle, col color.Color) []Triangle {
