@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -20,4 +21,20 @@ func (authService *AuthService) signToken(input types.JWTClaimsInput) (string, e
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(authService.jwtSecret)
+}
+
+func (authService *AuthService) ParseWithClaims(token string) (*types.JwtClaims, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, &types.JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return authService.jwtSecret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := parsedToken.Claims.(*types.JwtClaims); ok && parsedToken.Valid {
+		return claims, nil
+	} else {
+		return nil, fmt.Errorf("invalid token or cannot convert claims")
+	}
 }

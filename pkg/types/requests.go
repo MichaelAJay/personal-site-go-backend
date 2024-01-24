@@ -20,3 +20,10 @@ type SignInRequestBody struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
+
+type CreatedAtOrder string
+
+const (
+	CreatedAtDesc CreatedAtOrder = "created_at_desc"
+	CreatedAtAsc  CreatedAtOrder = "created_at_asc"
+)

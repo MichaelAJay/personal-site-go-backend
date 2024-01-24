@@ -40,15 +40,23 @@ func (s *ContactService) ProcessForm(form types.ContactFormRequestBody) (string,
 	return "Success", nil
 }
 
-func (s *ContactService) GetUnreadForms() ([]types.UnreadContactForm, error) {
-	var contacts []types.UnreadContactForm
+/*
+ * createdAtOrder should be either "asc" or "desc"
+ */
+
+// TODO - set up the pagination results
+func (s *ContactService) GetMessages(pgNum int, createdAtOrderDirection string, getRead bool) ([]types.UnreadContactForm, error) {
+	var messages []types.UnreadContactForm
+
+	offset := (pgNum - 1) * 10
+	orderArg := fmt.Sprintf("created_at %s", createdAtOrderDirection)
 
 	dbClient := db_client.Db
-	result := dbClient.Model(&models.Contact{}).Select("ID", "Name", "Email", "CreatedAt").Where("Is_Read = ?", false).Find(&contacts)
+	result := dbClient.Model(&models.Contact{}).Select("ID", "Name", "Email", "CreatedAt").Where("Is_Read = ?", getRead).Find(&messages).Order(orderArg).Offset(offset).Limit(10)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return contacts, nil
+	return messages, nil
 }
 
 func (s *ContactService) GetMessage(id uint) (models.Contact, error) {

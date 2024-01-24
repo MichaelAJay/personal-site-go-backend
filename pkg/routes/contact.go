@@ -3,6 +3,7 @@ package routes
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/custom_errors"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/contact"
@@ -39,19 +40,37 @@ func PostContactFormHandler(service *contact.ContactService) gin.HandlerFunc {
 	}
 }
 
-// func GetUnreadContactFormList(c *gin.Context) {
-// 	list, err := services.NewContactService().GetUnreadForms()
-
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving unread forms"})
-// 		return
-// 	}
-
-//		c.JSON(http.StatusOK, list)
-//	}
-func GetUnreadContactFormListHandler(service *contact.ContactService) gin.HandlerFunc {
+func GetContactFormListHandler(service *contact.ContactService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		list, err := service.GetUnreadForms()
+		pgQueryParam := c.DefaultQuery("pg", "1")
+		orderQueryParam := c.DefaultQuery("order", "created_at_desc")
+		readQueryParam := c.DefaultQuery("read", "false")
+
+		pgNum, err := strconv.Atoi(pgQueryParam)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "pg query param could not be converted to an integer"})
+			return
+		}
+
+		getRead, err := strconv.ParseBool(readQueryParam)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "read query param could not be converted to a boolean"})
+			return
+		}
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order param"})
+			return
+		}
+
+		// Only ordering is on created_at
+		orderParts := strings.Split(orderQueryParam, "_")
+		if !(len(orderParts) == 3 && orderParts[0] == "created" && orderParts[1] == "at") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "only ordering is on created_at"})
+			return
+		}
+
+		list, err := service.GetMessages(pgNum, orderParts[2], getRead)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving unread forms"})

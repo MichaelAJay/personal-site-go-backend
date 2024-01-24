@@ -12,6 +12,7 @@ import (
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/auth"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/contact"
 	db_client "github.com/MichaelAJay/personal-site-go-backend/pkg/services/db-client"
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/user"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -49,7 +50,7 @@ func main() {
 	db := db_client.DbClient(cfg.DbDsn)
 
 	if env == "local" {
-		db.AutoMigrate(&models.Contact{})
+		db.AutoMigrate(&models.Contact{}, &models.User{})
 	}
 
 	router := gin.Default()
@@ -63,22 +64,27 @@ func main() {
 	router.GET("/", routes.HomeHandler)
 	router.GET("/sierpinski", routes.SierpinskiHandler)
 
+	userService := user.NewUserService(db)
+
 	// Contact Form
 	contactService := contact.NewContactService()
 	router.POST("/contact", routes.PostContactFormHandler(contactService))
-	router.GET("/contact/list", routes.GetUnreadContactFormListHandler(contactService))
+	router.GET("/contact/list", routes.GetContactFormListHandler(contactService))
 	router.GET("/contact", routes.GetMessageHandler(contactService))
 	router.PATCH("/contact/toggle-read-status/:id", routes.ToggleMessageReadStatus(contactService))
 
 	// Auth
-	authService, err := auth.NewAuthService()
+	authService, err := auth.NewAuthService(db_client.Db, userService)
 	if err != nil {
 		log.Fatalf("Error instantiating auth service: %v", err)
 	}
-
-	// Handle err
 	router.POST("/sign-up", routes.SignUp(authService))
 	router.POST("/sign-in", routes.SignIn(authService))
+
+	// User
+	// We shouldn't send the email plain - we should send a signed token
+	// This way the email can't be circumvented - the correct token must be sent
+	router.PATCH("/user/verify", routes.VerifyUser(userService))
 
 	fmt.Println("Server is running on http://localhost:8080")
 	router.Run(":8080")

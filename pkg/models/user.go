@@ -11,4 +11,6 @@ type User struct {
 	Lastname       string
 	Email          string `gorm:"not null;uniqueIndex"`
 	Hashedpassword []byte `gorm:"not null"`
+	IsAdmin        bool   `gorm:"not null; default:false"`
+	IsVerified     bool   `gorm:"not null; default:false"`
 }

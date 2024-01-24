@@ -8,17 +8,19 @@ import (
 
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/custom_errors"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/models"
-	db_client "github.com/MichaelAJay/personal-site-go-backend/pkg/services/db-client"
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/user"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/types"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type AuthService struct {
-	jwtSecret []byte
+	dbClient    *gorm.DB
+	userService *user.UserService
+	jwtSecret   []byte
 }
 
-func NewAuthService() (*AuthService, error) {
+func NewAuthService(dbClient *gorm.DB, userService *user.UserService) (*AuthService, error) {
 	secret := os.Getenv("JWT_SECRET")
 
 	if secret == "" {
@@ -26,16 +28,16 @@ func NewAuthService() (*AuthService, error) {
 	}
 
 	return &AuthService{
-		jwtSecret: []byte(secret),
+		dbClient:    dbClient,
+		userService: userService,
+		jwtSecret:   []byte(secret),
 	}, nil
 }
 
-func (authService *AuthService) SignUp(form types.SignUpRequestBody) (string, error) {
-	dbClient := db_client.Db
-
+func (authService *AuthService) SignUp(form types.SignUpRequestBody) (string, bool, error) {
 	// Check for existing user
 	var existingUser models.User
-	result := dbClient.Where("Email = ?", form.Email).First(&existingUser)
+	result := authService.dbClient.Where("Email = ?", form.Email).First(&existingUser)
 	// result.Error SHOULD BE gorm.ErrRecordNotFound.
 	// If it is, continue execution
 	// If not
@@ -43,9 +45,9 @@ func (authService *AuthService) SignUp(form types.SignUpRequestBody) (string, er
 	// - Otherwise no error - a record was found already with a matching email
 	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		if result.Error != nil {
-			return "", result.Error
+			return "", false, result.Error
 		} else { // NO ERROR - User exists
-			return "", custom_errors.NewOperationError("Unable to process registration")
+			return "", false, custom_errors.NewOperationError("Unable to process registration")
 		}
 	}
 
@@ -65,7 +67,7 @@ func (authService *AuthService) SignUp(form types.SignUpRequestBody) (string, er
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
-		return "", err
+		return "", false, err
 
 	}
 	user := models.User{
@@ -75,36 +77,40 @@ func (authService *AuthService) SignUp(form types.SignUpRequestBody) (string, er
 		Hashedpassword: hashedPassword,
 	}
 
-	createUserResult := dbClient.Create(&user)
+	createUserResult := authService.dbClient.Create(&user)
 	if createUserResult.Error != nil {
 		log.Printf("Error creating user record: %v", createUserResult.Error)
-		return "", createUserResult.Error
+		return "", false, createUserResult.Error
 	}
 
-	return authService.generateJWT(user.ID, false)
+	token, err := authService.generateJWT(user.ID, false)
+	return token, false, err
 }
 
-func (authService *AuthService) SignIn(input types.SignInRequestBody) (string, error) {
-	dbClient := db_client.Db
-
-	var user models.User
-	result := dbClient.Where("Email = ?", input.Email).First(&user)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return "", custom_errors.NewOperationError("Operation error")
-		} else {
-			return "", result.Error
+func (authService *AuthService) SignIn(input types.SignInRequestBody) (string, bool, error) {
+	user, err := authService.userService.GetUser(input.Email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Obfuscate record not found
+			return "", false, custom_errors.NewOperationError("Operation error")
 		}
+		return "", false, err
+	}
+
+	// User is verified
+	if !user.IsVerified {
+		return "", false, custom_errors.NewAccountNotVerifiedError("Account not verified")
 	}
 
 	// Verify password
 	isValid := verifyPassword(input.Password, user.Hashedpassword)
 	if !isValid {
-		return "", custom_errors.NewOperationError("Login not successful")
+		return "", false, custom_errors.NewOperationError("Login not successful")
 	}
 
 	// Return JWT
-	return authService.generateJWT(user.ID, false)
+	token, err := authService.generateJWT(user.ID, user.IsAdmin)
+	return token, user.IsAdmin, err
 }
 
 func (authService *AuthService) generateJWT(userId uint, isAdmin bool) (string, error) {
