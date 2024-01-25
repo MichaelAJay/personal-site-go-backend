@@ -17,3 +17,6 @@
 # Environment variables
 *.env
 config.json
+
+# Secrets
+/secrets
