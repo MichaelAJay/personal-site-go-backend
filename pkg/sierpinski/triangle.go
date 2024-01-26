@@ -18,7 +18,7 @@ type Triangle struct {
 	V1, V2, V3 vg.Point
 }
 
-func GenerateSierpinskiSVG(iterations int) (string, error) {
+func GenerateSierpinskiSVG(iterations int, color color.Color) (string, error) {
 	h := s * math.Sqrt(3) / 2
 
 	// Create canvas
@@ -38,12 +38,12 @@ func GenerateSierpinskiSVG(iterations int) (string, error) {
 	borderTriangle := Triangle{V1: v1, V2: v2, V3: v3}
 
 	// Draw the border
-	drawTriangle(&canvas, borderTriangle, color.Black)
+	drawTriangle(&canvas, borderTriangle, color)
 
 	// Iterate
 	source := []Triangle{borderTriangle}
 	for i := 1; i <= iterations; i++ {
-		source = iteration(&canvas, source, color.Black)
+		source = iteration(&canvas, source, color)
 	}
 
 	var svgBuffer bytes.Buffer
