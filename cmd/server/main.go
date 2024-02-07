@@ -50,9 +50,20 @@ func main() {
 
 	// Configure CORS
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
+
+	var origins []string
+	if env == "production" {
+		origins = []string{"https://michaelajay.github.io"}
+	} else {
+		origins = []string{"http://localhost:3000"}
+	}
+	config.AllowOrigins = origins
 	config.AllowMethods = []string{"GET"}
 	router.Use(cors.New(config))
+
+	if err := router.SetTrustedProxies(nil); err != nil {
+		log.Fatal(err)
+	}
 
 	router.GET("/", routes.HomeHandler)
 	router.GET("/sierpinski", routes.SierpinskiHandler)

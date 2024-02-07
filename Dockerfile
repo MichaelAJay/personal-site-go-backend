@@ -2,6 +2,9 @@ FROM golang:1.21.7-alpine3.19
 
 WORKDIR /app
 
+ENV ENV=local
+ENV GCP_PROJECT=ezman-386111
+
 COPY . .
 
 RUN go mod download
