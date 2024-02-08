@@ -1,9 +1,6 @@
-FROM golang:1.21.7-alpine3.19
+FROM golang:1.21.7-alpine3.19 AS build-stage
 
 WORKDIR /app
-
-ENV ENV=local
-ENV GCP_PROJECT=ezman-386111
 
 COPY . .
 
@@ -13,4 +10,13 @@ RUN go mod download
 # Now, to compile your application, use the familiar RUN command:
 RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-gs-ping ./cmd/server
 
-CMD ["/docker-gs-ping"]
+# Deploy the application binary into a lean image
+FROM gcr.io/distroless/base-debian11 AS build-release-stage
+
+WORKDIR /
+
+COPY --from=build-stage /docker-gs-ping /docker-gs-ping
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/docker-gs-ping"]
