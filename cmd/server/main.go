@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http/pprof"
 	"os"
 
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/models"
@@ -16,6 +17,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+func registerPprofRoutes(router *gin.Engine) {
+	r := router.Group("/debug/pprof")
+
+	r.GET("/", gin.WrapF(pprof.Index))
+	r.GET("/cmdline", gin.WrapF(pprof.Cmdline))
+	r.GET("/profile", gin.WrapF(pprof.Profile))
+	r.POST("/symbol", gin.WrapF(pprof.Symbol))
+	r.GET("/symbol", gin.WrapF(pprof.Symbol))
+	r.GET("/trace", gin.WrapF(pprof.Trace))
+	r.GET("/allocs", gin.WrapF(pprof.Handler("allocs").ServeHTTP))
+	r.GET("/block", gin.WrapF(pprof.Handler("block").ServeHTTP))
+	r.GET("/goroutine", gin.WrapF(pprof.Handler("goroutine").ServeHTTP))
+	r.GET("/heap", gin.WrapF(pprof.Handler("heap").ServeHTTP))
+	r.GET("/mutex", gin.WrapF(pprof.Handler("mutex").ServeHTTP))
+	r.GET("/threadcreate", gin.WrapF(pprof.Handler("threadcreate").ServeHTTP))
+}
 
 func main() {
 	err := godotenv.Load()
@@ -47,6 +65,9 @@ func main() {
 	}
 
 	router := gin.Default()
+	if env != "production" {
+		registerPprofRoutes(router)
+	}
 
 	// Configure CORS
 	config := cors.DefaultConfig()
