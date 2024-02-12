@@ -23,3 +23,9 @@ config.json
 
 # Scripts
 /scripts
+
+# Profile notes
+/profile
+
+targets.txt
+vegeta*

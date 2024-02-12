@@ -7,7 +7,6 @@ import (
 
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/custom_errors"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/models"
-	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/secrets"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/user"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/types"
 	"golang.org/x/crypto/bcrypt"
@@ -20,18 +19,7 @@ type AuthService struct {
 	jwtSecret   []byte
 }
 
-func NewAuthService(dbClient *gorm.DB, userService *user.UserService) (*AuthService, error) {
-	// secret := os.Getenv("JWT_SECRET")
-	secretManager, err := secrets.NewSecretManagerService()
-	if err != nil {
-		return nil, err
-	}
-
-	secret, err := secretManager.GetSecret("JWT_SECRET")
-	if err != nil {
-		return nil, err
-	}
-
+func NewAuthService(dbClient *gorm.DB, userService *user.UserService, secret string) (*AuthService, error) {
 	if secret == "" {
 		return nil, errors.New("JWT_SECRET not found")
 	}

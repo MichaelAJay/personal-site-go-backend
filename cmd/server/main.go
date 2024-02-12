@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"net/http/pprof"
 	"os"
 
+	"github.com/MichaelAJay/personal-site-go-backend/pkg/middleware"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/models"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/routes"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/services/auth"
@@ -16,6 +18,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"golang.org/x/time/rate"
 )
 
 func registerPprofRoutes(router *gin.Engine) {
@@ -86,7 +89,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Configure rate limiting
+	limiter := rate.NewLimiter(20, 10)
+	router.Use(middleware.RateLimitMiddleware(limiter))
+
+	// Routes
+
 	router.GET("/", routes.HomeHandler)
+	router.GET("/health", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, "Health ok")
+	})
+
 	router.GET("/sierpinski", routes.SierpinskiHandler)
 
 	userService := user.NewUserService(db)
@@ -99,7 +112,11 @@ func main() {
 	router.PATCH("/contact/toggle-read-status/:id", routes.ToggleMessageReadStatus(contactService))
 
 	// Auth
-	authService, err := auth.NewAuthService(db_client.Db, userService)
+	secret, err := secretManagerService.GetSecret("JWT_SECRET")
+	if err != nil {
+		log.Fatalf("Error during configuration: %v", err)
+	}
+	authService, err := auth.NewAuthService(db_client.Db, userService, secret)
 	if err != nil {
 		log.Fatalf("Error instantiating auth service: %v", err)
 	}
