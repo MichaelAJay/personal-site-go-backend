@@ -1,0 +1,28 @@
+FROM golang:1.21.7-alpine3.19 AS build-stage
+
+WORKDIR /app
+
+COPY . .
+
+RUN go mod download
+# At this point, you have a Go toolchain version 1.19.x and all your Go dependencies installed inside the image.
+
+# Now, to compile your application, use the familiar RUN command:
+RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-gs-ping ./cmd/server
+
+# Deploy the application binary into a lean image
+FROM alpine:latest AS build-release-stage
+
+# Install curl
+RUN apk --no-cache add curl
+
+# Create a non-root user and group
+RUN addgroup -S nonroot && adduser -S nonroot -G nonroot
+
+WORKDIR /
+
+COPY --from=build-stage /docker-gs-ping /docker-gs-ping
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/docker-gs-ping"]
