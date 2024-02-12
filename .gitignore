@@ -20,3 +20,12 @@ config.json
 
 # Secrets
 /secrets
+
+# Scripts
+/scripts
+
+# Profile notes
+/profile
+
+targets.txt
+vegeta*
