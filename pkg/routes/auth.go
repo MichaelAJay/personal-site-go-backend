@@ -17,7 +17,7 @@ func SignUp(authService *auth.AuthService) gin.HandlerFunc {
 			return
 		}
 
-		token, isAdmin, err := authService.SignUp(form)
+		token, err := authService.SignUp(form)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -25,7 +25,7 @@ func SignUp(authService *auth.AuthService) gin.HandlerFunc {
 
 		setAuthCookie(c, token)
 
-		c.JSON(http.StatusOK, gin.H{"message": "Login successful", "isAdmin": isAdmin})
+		c.JSON(http.StatusOK, gin.H{"message": "Account created", "token": token})
 	}
 }
 
@@ -38,14 +38,14 @@ func SignIn(authService *auth.AuthService) gin.HandlerFunc {
 			return
 		}
 
-		token, isAdmin, err := authService.SignIn(form)
+		token, err := authService.SignIn(form)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		setAuthCookie(c, token)
-		c.JSON(http.StatusOK, gin.H{"message": "Login successful", "isAdmin": isAdmin})
+		c.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
 	}
 }
 
