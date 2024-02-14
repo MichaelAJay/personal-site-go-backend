@@ -6,16 +6,18 @@ import (
 
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/custom_errors"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/models"
-	db_client "github.com/MichaelAJay/personal-site-go-backend/pkg/services/db-client"
 	"github.com/MichaelAJay/personal-site-go-backend/pkg/types"
+	"gorm.io/gorm"
 )
 
 type ContactService struct {
-	// Add dependencies
+	dbClient *gorm.DB
 }
 
-func NewContactService() *ContactService {
-	return &ContactService{}
+func NewContactService(dbClient *gorm.DB) *ContactService {
+	return &ContactService{
+		dbClient: dbClient,
+	}
 }
 
 func (s *ContactService) ProcessForm(form types.ContactFormRequestBody) (string, error) {
@@ -28,9 +30,7 @@ func (s *ContactService) ProcessForm(form types.ContactFormRequestBody) (string,
 		Message: form.Message,
 	}
 
-	dbClient := db_client.Db
-
-	result := dbClient.Create(&contact)
+	result := s.dbClient.Create(&contact)
 	if result.Error != nil {
 		log.Printf("Error creating contact record: %v", result.Error)
 		return "Failure", result.Error
@@ -51,8 +51,7 @@ func (s *ContactService) GetMessages(pgNum int, createdAtOrderDirection string, 
 	offset := (pgNum - 1) * 10
 	orderArg := fmt.Sprintf("created_at %s", createdAtOrderDirection)
 
-	dbClient := db_client.Db
-	result := dbClient.Model(&models.Contact{}).Select("ID", "Name", "Email", "CreatedAt").Where("Is_Read = ?", getRead).Find(&messages).Order(orderArg).Offset(offset).Limit(10)
+	result := s.dbClient.Model(&models.Contact{}).Select("ID", "Name", "Email", "CreatedAt").Where("Is_Read = ?", getRead).Find(&messages).Order(orderArg).Offset(offset).Limit(10)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -62,14 +61,13 @@ func (s *ContactService) GetMessages(pgNum int, createdAtOrderDirection string, 
 func (s *ContactService) GetMessage(id uint) (models.Contact, error) {
 	var message models.Contact
 
-	dbClient := db_client.Db
-	result := dbClient.Where("ID = ?", id).First(&message)
+	result := s.dbClient.Where("ID = ?", id).First(&message)
 	if result.Error != nil {
 		return models.Contact{}, result.Error
 	}
 
 	// Retrieve the message
-	if err := dbClient.Where("ID =?", id).First(&message).Error; err != nil {
+	if err := s.dbClient.Where("ID =?", id).First(&message).Error; err != nil {
 		return models.Contact{}, err
 	}
 
@@ -86,8 +84,7 @@ func (s *ContactService) GetMessage(id uint) (models.Contact, error) {
 }
 
 func (s *ContactService) ToggleMessageReadStatus(id uint, isRead bool) (string, error) {
-	dbClient := db_client.Db
-	result := dbClient.Model(&models.Contact{}).Where("ID = ?", id).Update("IsRead", isRead)
+	result := s.dbClient.Model(&models.Contact{}).Where("ID = ?", id).Update("IsRead", isRead)
 	if result.Error != nil {
 		return "Failure", result.Error
 	}

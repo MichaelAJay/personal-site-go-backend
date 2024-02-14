@@ -11,20 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// func PostContactFormHandler(c *gin.Context) {
-// 	var form types.ContactFormRequestBody
-
-// 	// This will bind the incoming JSON to form and handle validation
-// 	if err := c.ShouldBindJSON(&form); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	// Internal logic here
-// 	services.NewContactService().ProcessForm(form)
-
-//		c.JSON(http.StatusOK, gin.H{"message": "Contact form submitted successfully"})
-//	}
 func PostContactFormHandler(service *contact.ContactService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var form types.ContactFormRequestBody
