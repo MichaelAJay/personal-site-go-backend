@@ -82,7 +82,9 @@ func main() {
 		origins = []string{"http://localhost:3000"}
 	}
 	config.AllowOrigins = origins
-	config.AllowMethods = []string{"GET"}
+	config.AllowMethods = []string{"GET", "POST", "PATCH", "PUT", "DELETE"}
+	config.AllowCredentials = true
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"}
 	router.Use(cors.New(config))
 
 	if err := router.SetTrustedProxies(nil); err != nil {
@@ -111,7 +113,6 @@ func main() {
 	router.GET("/", routes.HomeHandler)
 	router.GET("/health", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "Health ok")
-		return
 	})
 
 	router.GET("/sierpinski", routes.SierpinskiHandler)
