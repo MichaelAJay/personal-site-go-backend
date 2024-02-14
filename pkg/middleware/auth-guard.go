@@ -12,11 +12,13 @@ func AuthGuard(authService *auth.AuthService) gin.HandlerFunc {
 		tokenString, err := extractToken(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
 		}
 
 		claims, err := authService.ParseWithClaims(tokenString)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: Invalid token"})
+			return
 		}
 
 		c.Set("userInfo", claims)
