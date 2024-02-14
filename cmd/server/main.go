@@ -111,6 +111,7 @@ func main() {
 	router.GET("/", routes.HomeHandler)
 	router.GET("/health", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "Health ok")
+		return
 	})
 
 	router.GET("/sierpinski", routes.SierpinskiHandler)
