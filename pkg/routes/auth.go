@@ -56,7 +56,7 @@ func setAuthCookie(c *gin.Context, token string) {
 		3600*3,
 		"/",
 		"",
-		false, // Secure: whether to use HTTPS only
-		true,  // HttpOnly: JS should not be able to access
+		true,
+		true, // HttpOnly: JS should not be able to access
 	)
 }
