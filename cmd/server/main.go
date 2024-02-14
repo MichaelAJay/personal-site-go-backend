@@ -93,6 +93,19 @@ func main() {
 	limiter := rate.NewLimiter(20, 10)
 	router.Use(middleware.RateLimitMiddleware(limiter))
 
+	// Services
+	userService := user.NewUserService(db)
+	contactService := contact.NewContactService(db)
+
+	secret, err := secretManagerService.GetSecret("JWT_SECRET")
+	if err != nil {
+		log.Fatalf("Error during configuration: %v", err)
+	}
+	authService, err := auth.NewAuthService(db, userService, secret)
+	if err != nil {
+		log.Fatalf("Error instantiating auth service: %v", err)
+	}
+
 	// Routes
 
 	router.GET("/", routes.HomeHandler)
@@ -102,24 +115,13 @@ func main() {
 
 	router.GET("/sierpinski", routes.SierpinskiHandler)
 
-	userService := user.NewUserService(db)
-
 	// Contact Form
-	contactService := contact.NewContactService()
 	router.POST("/contact", routes.PostContactFormHandler(contactService))
-	router.GET("/contact/list", routes.GetContactFormListHandler(contactService))
-	router.GET("/contact", routes.GetMessageHandler(contactService))
-	router.PATCH("/contact/toggle-read-status/:id", routes.ToggleMessageReadStatus(contactService))
+	router.GET("/contact/list", middleware.AuthGuard(authService), middleware.AdminGuard(), routes.GetContactFormListHandler(contactService))
+	router.GET("/contact", middleware.AuthGuard(authService), middleware.AdminGuard(), routes.GetMessageHandler(contactService))
+	router.PATCH("/contact/toggle-read-status/:id", middleware.AuthGuard(authService), middleware.AdminGuard(), routes.ToggleMessageReadStatus(contactService))
 
 	// Auth
-	secret, err := secretManagerService.GetSecret("JWT_SECRET")
-	if err != nil {
-		log.Fatalf("Error during configuration: %v", err)
-	}
-	authService, err := auth.NewAuthService(db_client.Db, userService, secret)
-	if err != nil {
-		log.Fatalf("Error instantiating auth service: %v", err)
-	}
 	router.POST("/sign-up", routes.SignUp(authService))
 	router.POST("/sign-in", routes.SignIn(authService))
 
