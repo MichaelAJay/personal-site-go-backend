@@ -59,4 +59,5 @@ func setAuthCookie(c *gin.Context, token string) {
 		true,
 		true, // HttpOnly: JS should not be able to access
 	)
+	c.SetSameSite(http.SameSiteNoneMode)
 }
