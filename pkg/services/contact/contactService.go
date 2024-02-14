@@ -45,7 +45,7 @@ func (s *ContactService) ProcessForm(form types.ContactFormRequestBody) (string,
  */
 
 // TODO - set up the pagination results
-func (s *ContactService) GetMessages(userId int, pgNum int, createdAtOrderDirection string, getRead bool) ([]types.UnreadContactForm, error) {
+func (s *ContactService) GetMessages(pgNum int, createdAtOrderDirection string, getRead bool) ([]types.UnreadContactForm, error) {
 	var messages []types.UnreadContactForm
 
 	offset := (pgNum - 1) * 10
